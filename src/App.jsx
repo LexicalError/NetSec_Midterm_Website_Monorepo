@@ -15,7 +15,7 @@ function Header({ setPage, isAuthenticated }) {
     }
     alert("Logout successful!");
     setPage('login');
-    // window.location.reload();
+    window.location.reload();
   }
 
   return (
@@ -38,12 +38,12 @@ function Header({ setPage, isAuthenticated }) {
   );
 }
 
-function MessageBlock({author, content, profile_picture_url, messageId, onDelete, username}){
+function MessageBlock({author, content, profile_picture_url, messageId, messageUuid, onDelete, username}){
   return  (
     <div className="panel">
       <div className='message_block'>
         <div className="user secondary_panel">
-          <img src={profile_picture_url} alt="Profile" width={64} height={64}/>
+          <img src={profile_picture_url} alt="No Picture" width={64} height={64}/>
           {author}
         </div>
         <div className="message">
@@ -52,7 +52,7 @@ function MessageBlock({author, content, profile_picture_url, messageId, onDelete
           </div>
         </div>
         {author === username && (
-            <button id="delete_button" onClick={() => onDelete(messageId)}>
+            <button id="delete_button" onClick={() => onDelete(messageUuid)}>
               Delete
             </button>
           )}
@@ -68,9 +68,13 @@ function Chat({isAuthenticated, username}) {
 
   useEffect(() => {
     async function fetchMessages() {
+      if(isAuthenticated === false){
+        setMessages([]);
+        return;
+      }
       const response = await getMessages();
       if (response.error) {
-        alert("Failed to fetch messages: " + response.error);
+        setMessages([]);
         return;
       }
       setMessages(response);
@@ -90,9 +94,9 @@ function Chat({isAuthenticated, username}) {
     }
   }
 
-  async function handleDeleteMessage(messageId) {
+  async function handleDeleteMessage(messageUuid) {
 
-    const response = await deleteMessage(messageId);
+    const response = await deleteMessage(messageUuid);
     if (response.error) {
       alert("Failed to delete message: " + response.error);
       return;
@@ -106,13 +110,14 @@ function Chat({isAuthenticated, username}) {
         {isAuthenticated ? (
           <>
             <div className="messages">
-              {messages.map((msg, index) => (
+              {messages.slice().reverse().map((msg, index) => (
                 <MessageBlock 
                   key={index}
                   author={msg.author} 
                   content={msg.content} 
                   profile_picture_url={msg.profile_picture} 
                   messageId={msg.id}
+                  messageUuid={msg.uuid}
                   username={username}
                   onDelete={handleDeleteMessage} 
                 />
@@ -187,7 +192,7 @@ function Profile() {
           <h2 className="about_text" id="profile_title">Profile</h2>
           <div className="secondary_panel" id="profile_settings">
             <p className="about_text">Profile Picture: </p>
-            <form>
+            <form className="picture_upload">
               <input
                 type="file"
                 id="myFile"
@@ -288,10 +293,12 @@ function App() {
   useEffect(() => {
     async function session() {
       const response = await checkSession();
-
       if(!response.error){
         setIsAuthenticated(true); 
         setUsername(response.username);
+      }
+      else{
+        setIsAuthenticated(false);
       }
     }
     session();

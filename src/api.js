@@ -1,8 +1,8 @@
-export const API_URL = "http://localhost:8000/api";
+export const API_URL = "http://fakelocal.api:8000/api";
 
 export async function getCSRFToken() {
     try {
-        const response = await fetch(`${API_URL}/csrf-token`, { credentials: "include" });
+        const response = await fetch(`${API_URL}/csrf`, { credentials: "include" });
         if (response.ok) {
             const data = await response.json();
             return data.csrfToken;
@@ -18,9 +18,17 @@ export async function getCSRFToken() {
 
 export async function register(username, password) {
     try {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
         const response = await fetch(`${API_URL}/user`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json", 
+                "X-CSRFToken": csrfToken
+            },  
             credentials: "include",
             body: JSON.stringify({ username, password }),
         });
@@ -39,9 +47,17 @@ export async function register(username, password) {
 
 export async function login(username, password) {
     try {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
         const response = await fetch(`${API_URL}/login`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
             credentials: "include",
             body: JSON.stringify({ username, password }),
         });
@@ -60,8 +76,17 @@ export async function login(username, password) {
 
 export async function logout() {
     try {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
         const response = await fetch(`${API_URL}/logout`, {
             method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
             credentials: "include",
         });
 
@@ -69,7 +94,7 @@ export async function logout() {
             return await response.json();
         } else {
             const error = await response.json();
-            return { error: error.error };
+            return { error: error.detail };
         }
     } catch (error) {
         console.error("Error logging out:", error);
@@ -79,16 +104,24 @@ export async function logout() {
 
 export async function checkSession() {
     try {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
         const response = await fetch(`${API_URL}/session`, {
             method: "GET",
             credentials: "include",
+            headers: {
+                "X-CSRFToken": csrfToken
+            }
         });
 
         if (response.ok) {
             return await response.json();
         } else {
             const error = await response.json();
-            return { error: error.error };
+            return { error: error.detail };
         }
     } catch (error) {
         console.error("Error checking session:", error);
@@ -96,32 +129,25 @@ export async function checkSession() {
     }
 }
 
-
-// export async function getUser() {
-//     try {
-//         const response = await fetch(`${API_URL}/user`, { credentials: "include" });
-
-//         if (response.ok) {
-//             return await response.json();
-//         } else {
-//             const error = await response.json();
-//             return { error: error.error };
-//         }
-//     } catch (error) {
-//         console.error("Error fetching user:", error);
-//         return { error: "Network error" };
-//     }
-// }
-
 export async function getMessages() {
     try {
-        const response = await fetch(`${API_URL}/message`, { credentials: "include" });
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
+        const response = await fetch(`${API_URL}/message`, { 
+            credentials: "include", 
+            headers: {
+                "X-CSRFToken": csrfToken
+            }
+        });
 
         if (response.ok) {
             return await response.json();
         } else {
             const error = await response.json();
-            return { error: error.error };
+            return { error: error.detail };
         }
     } catch (error) {
         console.error("Error fetching messages:", error);
@@ -131,9 +157,17 @@ export async function getMessages() {
 
 export async function sendMessage(content) {
     try {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
         const response = await fetch(`${API_URL}/message`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            },
             credentials: "include",
             body: JSON.stringify({ content }),
         });
@@ -142,7 +176,7 @@ export async function sendMessage(content) {
             return await response.json();
         } else {
             const error = await response.json();
-            return { error: error.error };
+            return { error: error.detail };
         }
     } catch (error) {
         console.error("Error sending message:", error);
@@ -150,18 +184,26 @@ export async function sendMessage(content) {
     }
 }
 
-export async function deleteMessage(id) {
+export async function deleteMessage(uuid) {
     try {
-        const response = await fetch(`${API_URL}/message/${id}`, {
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }
+
+        const response = await fetch(`${API_URL}/message/${uuid}`, {
             method: "DELETE",
             credentials: "include",
+            headers: {
+                "X-CSRFToken": csrfToken
+            },
         });
 
         if (response.ok) {
             return await response.json();
         } else {
             const error = await response.json();
-            return { error: error.error };
+            return { error: error.detail };
         }
     } catch (error) {
         console.error("Error deleting message:", error);
@@ -174,21 +216,29 @@ export async function uploadProfilePicture(file) {
     formData.append("file", file);
   
     try {
-      const response = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+        const csrfToken = await getCSRFToken(); // Fetch the CSRF token
+        if (csrfToken.error) {
+            return { error: csrfToken.error };
+        }    
+    
+        const response = await fetch(`${API_URL}/upload`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+            },
+            credentials: "include",
+            body: formData,
+        });
   
-      if (response.ok) {
-        return await response.json(); // Return the server's response
-      } else {
-        const error = await response.json();
-        return { error: error.error };
-      }
+        if (response.ok) {
+            return await response.json(); // Return the server's response
+        } else {
+            const error = await response.json();
+            return { error: error.detail };
+        }
     } catch (error) {
-      console.error("Error uploading profile picture:", error);
-      return { error: "Network error" };
+        console.error("Error uploading profile picture:", error);
+        return { error: "Network error" };
     }
   }
 

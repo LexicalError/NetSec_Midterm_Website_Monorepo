@@ -194,6 +194,15 @@ nav {
   box-shadow: none; /* No shadow on hover */
 }
 
+.picture_upload {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+
+}
+
 #ai_slop {
   display: flex;
   flex-direction: column;
