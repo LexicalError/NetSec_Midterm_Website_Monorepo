@@ -68,7 +68,8 @@ function Chat({isAuthenticated, username}) {
 
   useEffect(() => {
     async function fetchMessages() {
-      if(isAuthenticated === false){
+      const sessionResponse = await checkSession();
+      if (sessionResponse.error) {
         setMessages([]);
         return;
       }
