@@ -22,7 +22,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["fakelocal.api"]
 
 
 # Application definition
@@ -122,12 +122,23 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "http://fakelocal.api:5173",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
+    "http://fakelocal.api:5173",
 ]
+
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "x-csrftoken",
+    "authorization",
+    "accept",
+    "origin",
+    "user-agent",
+    "x-requested-with",
+]
+
 
 CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_SECURE = False
@@ -135,3 +146,6 @@ SESSION_COOKIE_SECURE = False
 # Vercel blob
 VERCEL_BLOB_BASE_URL = env('VERCEL_BLOB_BASE_URL')
 BLOB_READ_WRITE_TOKEN = env('BLOB_READ_WRITE_TOKEN')
+
+
+AUTH_USER_MODEL = 'api.CustomUser'
