@@ -10,22 +10,45 @@ from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.core.exceptions import ValidationError
+from pydantic import BaseModel, ValidationError, field_validator
+import re
 import vercel_blob
 
 
 api = NinjaAPI(csrf=True, auth=django_auth)
-# api = NinjaAPI(auth=django_auth)
 
 class UserIn(Schema):
     username: str
     password: str
 
+    @field_validator('*')
+    def alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
+
+
 class UserOut(Schema):
     id: str
     username: str
 
+    @field_validator('id')
+    def slug(cls, v):
+        assert re.match(r'^[a-zA-Z0-9-_]+$', v), 'must be slug'
+        return v
+
+    @field_validator('username')
+    def alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
+
 class MessageIn(Schema):
     content: str
+
+    @field_validator('*')
+    def alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
 
 class MessageOut(Schema):
     id: int
@@ -34,11 +57,36 @@ class MessageOut(Schema):
     author: str
     profile_picture: str
 
+    @field_validator('uuid')
+    def slug(cls, v):
+        assert re.match(r'^[a-zA-Z0-9-_]+$', v), 'must be slug'
+        return v
+
+    @field_validator('content')
+    def alphanumeric_space(cls, v):
+        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        return v
+
+    @field_validator('author')
+    def alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
+
 class ReturnMessage(Schema):
     message: str
 
+    @field_validator('*')
+    def alphanumeric_space(cls, v):
+        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        return v
+    
 class ReturnError(Schema):
     error: str
+
+    @field_validator('*')
+    def alphanumeric_space(cls, v):
+        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        return v
 
 
 @api.get("/csrf", auth=None)
@@ -49,10 +97,14 @@ def get_csrf_token(request):
 
 @api.post("/login", response={200: ReturnMessage, 401: ReturnError}, auth=None)
 def login_user(request, payload: UserIn):
-    user = authenticate(username=payload.username, password=payload.password)
-    if user is not None:
-        login(request, user)
-        return 200, {"message": "Login successful"}
+    try:
+        user = authenticate(username=payload.username, password=payload.password)
+        if user is not None:
+            login(request, user)
+            return 200, {"message": "Login successful"}
+    except Exception as e:
+        print(e)
+        return 401, {"error": "Invalid credentials"}
     return 401, {"error": "Invalid credentials"}
 
 @api.post("/logout", response={200: ReturnMessage, 400: ReturnError})
@@ -77,10 +129,13 @@ def session_status(request):
 @api.post("/user", response={200:ReturnMessage, 400: ReturnError}, auth=None)
 def create_user(request, payload: UserIn):
     try:
-        user = CustomUser.objects.create_user(**payload.dict())
+        user = CustomUser(**payload.dict())
+        user.save()
     except IntegrityError as e:
         if 'UNIQUE constraint failed' in str(e):
             return 400, {"error": "Username already exists"}
+        return 400, {"error": "User creation failed"}
+    except ValidationError as e:
         return 400, {"error": "User creation failed"}
     except Exception as e:
         return 400, {"error": "User creation failed"}
@@ -105,11 +160,11 @@ def create_user(request, payload: UserIn):
 
 
 # @api.delete("/user/{user_id}", response={200:ReturnMessage, 404:ReturnError, 500:ReturnError})
-# def delete_user(request, user_id: int):
+# def delete_user(request, user_id: str):
 #     try:
-#         user = User.objects.get(id=user_id)
+#         user = CustomUser.objects.get(id=user_id)
 #         user.delete()
-#     except User.DoesNotExist:
+#     except CustomUser.DoesNotExist:
 #         return 404, {"error": "User not found"}
 #     except Exception as e:
 #         print(e)
@@ -125,6 +180,8 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
         profile_picture.profile_picture = uploaded_file['downloadUrl']
         profile_picture.save()
         return 200, {"message": "Image uploaded successfully"}
+    except ValidationError:
+        return 400, {"error": "Image upload failed"}
     except Exception as e:
         print(e)
         return 400, {"error": "Image upload failed"}
@@ -134,8 +191,11 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
 def create_message(request, payload: MessageIn):
     try:
         author = CustomUser.objects.get(id=request.user.id)
-        Message.objects.create(content=payload.content, author=author)
+        message = Message(content=payload.content, author=author)
+        message.save()
     except CustomUser.DoesNotExist:
+        return 400, {"error": "Message creation failed"}
+    except ValidationError:
         return 400, {"error": "Message creation failed"}
     except Exception as e:
         print(e)
