@@ -14,6 +14,14 @@ from django.core.exceptions import ValidationError
 from pydantic import BaseModel, ValidationError, field_validator
 import re
 import vercel_blob
+from PIL import Image, UnidentifiedImageError
+from io import BytesIO
+
+# 5 KB
+MAX_FILE_SIZE = 5 * 1024
+
+SLUG = re.compile(r'^[a-zA-Z0-9-_]+$')
+ALNUMERIC_SPACE = re.compile(r'^[a-zA-Z0-9 ]+$')
 
 
 api = NinjaAPI(csrf=True, auth=django_auth)
@@ -34,7 +42,7 @@ class UserOut(Schema):
 
     @field_validator('id')
     def slug(cls, v):
-        assert re.match(r'^[a-zA-Z0-9-_]+$', v), 'must be slug'
+        assert SLUG.match(v), 'must be slug'
         return v
 
     @field_validator('username')
@@ -59,12 +67,12 @@ class MessageOut(Schema):
 
     @field_validator('uuid')
     def slug(cls, v):
-        assert re.match(r'^[a-zA-Z0-9-_]+$', v), 'must be slug'
+        assert SLUG.match(v), 'must be slug'
         return v
 
     @field_validator('content')
     def alphanumeric_space(cls, v):
-        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        assert ALNUMERIC_SPACE.match(v), 'must be alphanumeric or space'
         return v
 
     @field_validator('author')
@@ -77,7 +85,7 @@ class ReturnMessage(Schema):
 
     @field_validator('*')
     def alphanumeric_space(cls, v):
-        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        assert ALNUMERIC_SPACE.match(v), 'must be alphanumeric or space'
         return v
     
 class ReturnError(Schema):
@@ -85,7 +93,7 @@ class ReturnError(Schema):
 
     @field_validator('*')
     def alphanumeric_space(cls, v):
-        assert re.match(r'^[a-zA-Z0-9 ]+$', v), 'must be alphanumeric or space'
+        assert ALNUMERIC_SPACE.match(v), 'must be alphanumeric or space'
         return v
 
 
@@ -174,8 +182,51 @@ def create_user(request, payload: UserIn):
 @api.post("/upload", response={200:ReturnMessage, 400:ReturnError})
 def upload_profile_picture(request, file: UploadedFile = File(...)):
     try:
+        # file name check:
+        if '0x00' in file.name:
+            return 400, {"error": "Image upload failed"}
+        name_parts = file.name.rsplit(".", 1)
+        if len(name_parts) != 2:
+            return 400, {"error": "Invalid file name"}
+        basename, ext = name_parts
+        if ext not in ['jpg', 'png']:
+            return 400, {"error": "Invalid file name"}
+        if len(basename) > 255:
+            return 400, {"error": "Invalid file name"}
+        if re.match(r'^[a-zA-Z0-9-_]+$', basename) is None:
+            return 400, {"error": "Invalid file name"}
+        
+        # Check MIME type
+        content_type = file.content_type
+        if content_type not in ['image/jpeg', 'image/png']:
+            return 400, {"error": "Unsupported file type"}
+        
+        file_data = file.read()
+        if not file_data:
+            return 400, {"error": "File is empty"}
+        if len(file_data) > MAX_FILE_SIZE:
+            return 400, {"error": "File too large"}
+        
+        # Validate content
+        try:
+            img = Image.open(BytesIO(file_data))
+            img.verify()  # validate file integrity
+        except UnidentifiedImageError:
+            return 400, {"error": "Invalid file"}
+        except Exception:
+            return 400, {"error": "Invalid file"}
+        
+        # Sanitize image
+        img = Image.open(BytesIO(file_data))
+        img = img.convert("RGB")  
+        img = img.resize((64, 64))
+
+        safe_buffer = BytesIO()
+        img.save(safe_buffer, format="PNG") 
+        safe_buffer.seek(0)
+
         user = CustomUser.objects.get(id=request.user.id)
-        uploaded_file = vercel_blob.put(f'{request.user.id}', file.file.read(), {})
+        uploaded_file = vercel_blob.put(f'{request.user.id}', safe_buffer.read(), {})
         profile_picture, created = Profile_Picture.objects.get_or_create(user=user)
         profile_picture.profile_picture = uploaded_file['downloadUrl']
         profile_picture.save()
