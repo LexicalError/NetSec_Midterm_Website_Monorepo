@@ -27,10 +27,10 @@ SECRET_KEY_FALLBACKS = [
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+DEBUG = True
 
 ALLOWED_HOSTS = [
-        # fakelocal.api"
+        'fakelocal.api', # REMOVE
         '127.0.0.1', 
         '.vercel.app'
     ]
@@ -44,15 +44,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    # 'django.contrib.staticfiles',
     'api',
-    # "corsheaders",
-]
+    "corsheaders", # REMOVE
+] 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # REMOVE
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -135,24 +135,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # CORS
-# CORS_ALLOWED_ORIGINS = [
-#     "http://fakelocal.api:5173",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://fakelocal.api:5173",
+]
 
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://fakelocal.api:5173",
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://fakelocal.api:5173",
+]
 
-# CORS_ALLOW_HEADERS = [
-#     "content-type",
-#     "x-csrftoken",
-#     "authorization",
-#     "accept",
-#     "origin",
-#     "user-agent",
-#     "x-requested-with",
-# ]
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "x-csrftoken",
+    "authorization",
+    "accept",
+    "origin",
+    "user-agent",
+    "x-requested-with",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Vercel blob
 VERCEL_BLOB_BASE_URL = os.environ['VERCEL_BLOB_BASE_URL']
@@ -162,9 +162,13 @@ BLOB_READ_WRITE_TOKEN = os.environ['BLOB_READ_WRITE_TOKEN']
 AUTH_USER_MODEL = 'api.CustomUser'
 
 # SSL
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 3600
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 3600
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
+
+#GROQ
+GROQ_API_URL = os.environ['GROQ_API_URL']
+GROQ_API_KEY = os.environ['GROQ_API_KEY']

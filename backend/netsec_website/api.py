@@ -3,6 +3,7 @@ from ninja import NinjaAPI
 from ninja import Schema
 from ninja import UploadedFile, File
 from ninja.security import django_auth
+from ninja.errors import ValidationError as NinjaValidationError
 # django
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.http import HttpResponse
@@ -10,6 +11,7 @@ from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+from .settings import GROQ_API_KEY, GROQ_API_URL
 # pydantic
 from pydantic import BaseModel, ValidationError, field_validator
 #api
@@ -19,6 +21,7 @@ import re
 import vercel_blob
 from typing import List
 from io import BytesIO
+import requests
 # Pillow
 from PIL import Image, UnidentifiedImageError
 
@@ -31,6 +34,15 @@ ALNUMERIC_SPACE = re.compile(r'^[a-zA-Z0-9 ]+$')
 
 api = NinjaAPI(csrf=True, auth=django_auth)
 
+@api.exception_handler(NinjaValidationError)
+def custom_validation_error_handler(request, exc):
+    # Return a simplified error response
+    return HttpResponse(
+        '{"details": "error"}',
+        content_type="application/json",
+        status=400
+    )
+
 class UserIn(Schema):
     username: str
     password: str
@@ -39,7 +51,6 @@ class UserIn(Schema):
     def alphanumeric(cls, v):
         assert v.isalnum(), 'must be alphanumeric'
         return v
-
 
 class UserOut(Schema):
     id: str
@@ -94,7 +105,7 @@ class ReturnMessage(Schema):
         return v
     
 class ReturnError(Schema):
-    error: str
+    details: str
 
     @field_validator('*')
     def alphanumeric_space(cls, v):
@@ -117,15 +128,16 @@ def login_user(request, payload: UserIn):
             return 200, {"message": "Login successful"}
     except Exception as e:
         print(e)
-        return 401, {"error": "Invalid credentials"}
-    return 401, {"error": "Invalid credentials"}
+        return 401, {"details": "Invalid credentials"}
+    return 401, {"details": "Invalid credentials"}
 
 @api.post("/logout", response={200: ReturnMessage, 400: ReturnError})
 def logout_user(request):
     try:
         logout(request)
     except Exception as e:
-        return 400, {"error": "Logout failed"}
+        print(e)
+        return 400, {"details": "Logout failed"}
     return 200, {"message": "Logout successful"}
 
 @api.get("/session", response={200: UserOut, 401: ReturnError})
@@ -135,8 +147,8 @@ def session_status(request):
             return 200, {"username": f"{request.user.username}", "id": str(request.user.id)}
         
     except Exception as e:
-        return 401, {"error": "User is not logged in"}
-    return 401, {"error": "User is not logged in"}
+        return 401, {"details": "User is not logged in"}
+    return 401, {"details": "User is not logged in"}
 
 
 @api.post("/user", response={200:ReturnMessage, 400: ReturnError}, auth=None)
@@ -146,12 +158,12 @@ def create_user(request, payload: UserIn):
         user.save()
     except IntegrityError as e:
         if 'UNIQUE constraint failed' in str(e):
-            return 400, {"error": "Username already exists"}
-        return 400, {"error": "User creation failed"}
+            return 400, {"details": "Username already exists"}
+        return 400, {"details": "User creation failed"}
     except ValidationError as e:
-        return 400, {"error": "User creation failed"}
+        return 400, {"details": "User creation failed"}
     except Exception as e:
-        return 400, {"error": "User creation failed"}
+        return 400, {"details": "User creation failed"}
     return 200, {"message": "User created successfully"}
 
 
@@ -168,7 +180,7 @@ def create_user(request, payload: UserIn):
 #             })
 #     except Exception as e:
 #         print(e)
-#         return 500, {"error": "User retrieval failed"}
+#         return 500, {"details": "User retrieval failed"}
 #     return 200, user_list
 
 
@@ -178,10 +190,10 @@ def create_user(request, payload: UserIn):
 #         user = CustomUser.objects.get(id=user_id)
 #         user.delete()
 #     except CustomUser.DoesNotExist:
-#         return 404, {"error": "User not found"}
+#         return 404, {"details": "User not found"}
 #     except Exception as e:
 #         print(e)
-#         return 500, {"error": "User deletion failed"}
+#         return 500, {"details": "User deletion failed"}
 #     return 200, {"message": "User deleted successfully"}
 
 @api.post("/upload", response={200:ReturnMessage, 400:ReturnError})
@@ -189,37 +201,37 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
     try:
         # file name check:
         if '0x00' in file.name:
-            return 400, {"error": "Image upload failed"}
+            return 400, {"details": "Image upload failed"}
         name_parts = file.name.rsplit(".", 1)
         if len(name_parts) != 2:
-            return 400, {"error": "Invalid file name"}
+            return 400, {"details": "Invalid file name"}
         basename, ext = name_parts
         if ext not in ['jpg', 'png']:
-            return 400, {"error": "Invalid file name"}
+            return 400, {"details": "Invalid file name"}
         if len(basename) > 255:
-            return 400, {"error": "Invalid file name"}
+            return 400, {"details": "Invalid file name"}
         if re.match(r'^[a-zA-Z0-9-_]+$', basename) is None:
-            return 400, {"error": "Invalid file name"}
+            return 400, {"details": "Invalid file name"}
         
         # Check MIME type
         content_type = file.content_type
         if content_type not in ['image/jpeg', 'image/png']:
-            return 400, {"error": "Unsupported file type"}
+            return 400, {"details": "Unsupported file type"}
         
         file_data = file.read()
         if not file_data:
-            return 400, {"error": "File is empty"}
+            return 400, {"details": "File is empty"}
         if len(file_data) > MAX_FILE_SIZE:
-            return 400, {"error": "File too large"}
+            return 400, {"details": "File too large"}
         
         # Validate content
         try:
             img = Image.open(BytesIO(file_data))
             img.verify()  # validate file integrity
         except UnidentifiedImageError:
-            return 400, {"error": "Invalid file"}
+            return 400, {"details": "Invalid file"}
         except Exception:
-            return 400, {"error": "Invalid file"}
+            return 400, {"details": "Invalid file"}
         
         # Sanitize image
         img = Image.open(BytesIO(file_data))
@@ -237,10 +249,10 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
         profile_picture.save()
         return 200, {"message": "Image uploaded successfully"}
     except ValidationError:
-        return 400, {"error": "Image upload failed"}
+        return 400, {"details": "Image upload failed"}
     except Exception as e:
         print(e)
-        return 400, {"error": "Image upload failed"}
+        return 400, {"details": "Image upload failed"}
 
 
 @api.post("/message", response={200:ReturnMessage, 400:ReturnError})
@@ -250,12 +262,12 @@ def create_message(request, payload: MessageIn):
         message = Message(content=payload.content, author=author)
         message.save()
     except CustomUser.DoesNotExist:
-        return 400, {"error": "Message creation failed"}
+        return 400, {"details": "Message creation failed"}
     except ValidationError:
-        return 400, {"error": "Message creation failed"}
+        return 400, {"details": "Message creation failed"}
     except Exception as e:
         print(e)
-        return 400, {"error": "Message creation failed"}
+        return 400, {"details": "Message creation failed"}
     return 200, {"message": "Message created successfully"}
 
 @api.get("/message", response={200: List[MessageOut], 400: ReturnError})
@@ -274,7 +286,7 @@ def list_message(request):
             })
     except Exception as e:
         print(e)
-        return 400, {"error": "Message retrieval failed"}
+        return 400, {"details": "Message retrieval failed"}
     return 200, message_list
 
 @api.delete("/message/{message_uuid}", response={200: ReturnMessage, 400: ReturnError})
@@ -282,13 +294,41 @@ def delete_message(request, message_uuid: str):
     try:
         message = Message.objects.get(uuid=message_uuid)
         if request.user != message.author or request.user.username != message.author.username or request.user.id != message.author.id:
-            return 400, {"error": "Message deletion failed"}
+            return 400, {"details": "Message deletion failed"}
 
         message.delete()
     except Message.DoesNotExist:
-        return 400, {"error": "Message deletion failed"}
+        return 400, {"details": "Message deletion failed"}
     except Exception as e:
         print(e)
-        return 400, {"error": "Message deletion failed"}
+        return 400, {"details": "Message deletion failed"}
     return 200, {"message": "Message deleted successfully"}
+
+@api.get("/ai_slop", response={200: ReturnMessage, 400: ReturnError})
+def ai_slop(request):
+    try:
+        url = GROQ_API_URL
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        }
+
+        data = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "user", "content": "Generate a 2 word Italian brain rot name like: 'bombardino crocodilo' or 'cappuccino assassino', respond with only 2 words."},
+            ],
+        }
+
+        response = requests.post(url, json=data, headers=headers)
+
+        if response.status_code == 200:
+            content = response.json()
+            message = content["choices"][0]["message"]["content"]
+            cleaned_message = re.sub(r'[^a-zA-Z0-9 ]', '', message)
+            return 200, {"message": cleaned_message} 
+        return 400 , {"details": "Slop failed"}
+    except Exception as e:
+        print(e)
+        return 400, {"details": "Slop failed"}
 
