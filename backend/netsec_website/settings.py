@@ -8,10 +8,10 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # django-environ
-env = environ.Env(
-    DEBUG=(bool, False) 
-)
-environ.Env.read_env(env_file=BASE_DIR / '.env.local')
+# env = environ.Env(
+#     DEBUG=(bool, False) 
+# )
+# environ.Env.read_env(env_file=BASE_DIR / '.env.local')
 
 
 # Quick-start development settings - unsuitable for production
@@ -155,8 +155,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS_ALLOW_CREDENTIALS = True
 
 # Vercel blob
-VERCEL_BLOB_BASE_URL = env('VERCEL_BLOB_BASE_URL')
-BLOB_READ_WRITE_TOKEN = env('BLOB_READ_WRITE_TOKEN')
+VERCEL_BLOB_BASE_URL = os.environ['VERCEL_BLOB_BASE_URL']
+BLOB_READ_WRITE_TOKEN = os.environ['BLOB_READ_WRITE_TOKEN']
 
 
 AUTH_USER_MODEL = 'api.CustomUser'
