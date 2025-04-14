@@ -1,6 +1,7 @@
 
 from pathlib import Path
-import environ
+# import environ
+import os
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -17,12 +18,22 @@ environ.Env.read_env(env_file=BASE_DIR / '.env.local')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+# SECRET_KEY = env('SECRET_KEY')
+# SECRET_KEY_FALLBACK = env('SECRET_KEY_FALLBACK')
+SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY_FALLBACKS = [
+    os.environ["SECRET_KEY_FALLBACK"],
+]
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
-ALLOWED_HOSTS = ["fakelocal.api"]
+ALLOWED_HOSTS = [
+        # fakelocal.api"
+        '127.0.0.1', 
+        '.vercel.app'
+    ]
 
 
 # Application definition
@@ -35,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
-    "corsheaders",
+    # "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -66,7 +77,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'netsec_website.wsgi.application'
+# WSGI_APPLICATION = 'netsec_website.wsgi.application'
+WSGI_APPLICATION = 'netsec_website.wsgi.app'
 
 
 # Database
@@ -114,34 +126,33 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+# STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://fakelocal.api:5173",
-]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://fakelocal.api:5173",
-]
+# CORS
+# CORS_ALLOWED_ORIGINS = [
+#     "http://fakelocal.api:5173",
+# ]
 
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "x-csrftoken",
-    "authorization",
-    "accept",
-    "origin",
-    "user-agent",
-    "x-requested-with",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://fakelocal.api:5173",
+# ]
 
-
-CORS_ALLOW_CREDENTIALS = True
-SESSION_COOKIE_SECURE = False
+# CORS_ALLOW_HEADERS = [
+#     "content-type",
+#     "x-csrftoken",
+#     "authorization",
+#     "accept",
+#     "origin",
+#     "user-agent",
+#     "x-requested-with",
+# ]
+# CORS_ALLOW_CREDENTIALS = True
 
 # Vercel blob
 VERCEL_BLOB_BASE_URL = env('VERCEL_BLOB_BASE_URL')
@@ -149,3 +160,11 @@ BLOB_READ_WRITE_TOKEN = env('BLOB_READ_WRITE_TOKEN')
 
 
 AUTH_USER_MODEL = 'api.CustomUser'
+
+# SSL
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True

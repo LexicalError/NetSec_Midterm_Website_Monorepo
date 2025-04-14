@@ -1,21 +1,26 @@
+# ninja
 from ninja import NinjaAPI
 from ninja import Schema
-from api.models import Message, Profile_Picture, CustomUser
-from typing import List
 from ninja import UploadedFile, File
 from ninja.security import django_auth
+# django
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.http import HttpResponse
 from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
+# pydantic
 from pydantic import BaseModel, ValidationError, field_validator
+#api
+from api.models import Message, Profile_Picture, CustomUser
+# python
 import re
 import vercel_blob
-from PIL import Image, UnidentifiedImageError
+from typing import List
 from io import BytesIO
+# Pillow
+from PIL import Image, UnidentifiedImageError
 
 # 5 KB
 MAX_FILE_SIZE = 5 * 1024
