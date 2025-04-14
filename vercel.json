@@ -14,8 +14,13 @@
       "config": { 
         "maxLambdaSize": "15mb", 
         "runtime": "python3.12",
-        "includeFiles": "backend/netsec_website/requirements.txt" 
+        "includeFiles": "backend/requirements.txt" 
       }
+    },
+    {
+      "src": "build_files.sh",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "staticfiles_build" }
     }
   ],
   "routes": [
