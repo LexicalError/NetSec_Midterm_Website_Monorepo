@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import nyom from './assets/nyom.png'; 
 import './App.css';
-import { login, logout, register, checkSession, getMessages, sendMessage, uploadProfilePicture, deleteMessage } from './api.js';
-import { generateText } from "ai"
-import { groq } from "./ai_slop.js";
+import { login, logout, register, checkSession, getMessages, sendMessage, uploadProfilePicture, deleteMessage, aiSlop } from './api.js';
 
 
 function Header({ setPage, isAuthenticated }) {
@@ -256,11 +254,12 @@ function AISlop() {
   const [aiText, setAiText] = useState("");
 
   async function handleAiTextChange(event) {
-    const { text } = await generateText({
-      model: groq('llama-3.1-8b-instant'),
-      prompt: "Give me AI Slop, like bombardino crocodilo, be extremely creative, less than 10 words.",
-    })
-    setAiText(text);
+    const response = await aiSlop();
+    if (response.error) {
+      alert("Failed to generate AI Slop: " + response.error);
+      return;
+    }
+    setAiText(response.message);
   }
   return (
     <div className="center">
