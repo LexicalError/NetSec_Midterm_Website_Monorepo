@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import nyom from './assets/nyom.png'; 
 import './App.css';
-import { login, logout, register, checkSession, getMessages, sendMessage, uploadProfilePicture, deleteMessage} from './api.js';
+import { login, logout, register, checkSession, getMessages, sendMessage, uploadProfilePicture, deleteMessage } from './api.js';
 import { generateText } from "ai"
 import { groq } from "./ai_slop.js";
 
