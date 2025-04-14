@@ -2,7 +2,7 @@
 from pathlib import Path
 # import environ
 import os
-
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,10 +27,10 @@ SECRET_KEY_FALLBACKS = [
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = [
-        'fakelocal.api', # REMOVE
+        # 'fakelocal.api', # REMOVE
         '127.0.0.1', 
         '.vercel.app'
     ]
@@ -39,20 +39,20 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # 'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     # 'django.contrib.staticfiles',
     'api',
-    "corsheaders", # REMOVE
+    # "corsheaders", # REMOVE
 ] 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # REMOVE
+    # 'corsheaders.middleware.CorsMiddleware', # REMOVE
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -133,26 +133,66 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,  # Keeps Django's default logging
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname}: {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",  # Or INFO in production
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
+            "formatter": "verbose",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",  # Set to DEBUG for more verbose output
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "__main__": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
+
+
 
 # CORS
-CORS_ALLOWED_ORIGINS = [
-    "http://fakelocal.api:5173",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://fakelocal.api:5173",
+# ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://fakelocal.api:5173",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://fakelocal.api:5173",
+# ]
 
-CORS_ALLOW_HEADERS = [
-    "content-type",
-    "x-csrftoken",
-    "authorization",
-    "accept",
-    "origin",
-    "user-agent",
-    "x-requested-with",
-]
-CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_HEADERS = [
+#     "content-type",
+#     "x-csrftoken",
+#     "authorization",
+#     "accept",
+#     "origin",
+#     "user-agent",
+#     "x-requested-with",
+# ]
+# CORS_ALLOW_CREDENTIALS = True
 
 # Vercel blob
 VERCEL_BLOB_BASE_URL = os.environ['VERCEL_BLOB_BASE_URL']
@@ -162,12 +202,12 @@ BLOB_READ_WRITE_TOKEN = os.environ['BLOB_READ_WRITE_TOKEN']
 AUTH_USER_MODEL = 'api.CustomUser'
 
 # SSL
-# SECURE_SSL_REDIRECT = True
-# CSRF_COOKIE_SECURE = True
-# SESSION_COOKIE_SECURE = True
-# SECURE_HSTS_SECONDS = 3600
-# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-# SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 #GROQ
 GROQ_API_URL = os.environ['GROQ_API_URL']

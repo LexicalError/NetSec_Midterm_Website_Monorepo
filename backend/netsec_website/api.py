@@ -24,6 +24,9 @@ from io import BytesIO
 import requests
 # Pillow
 from PIL import Image, UnidentifiedImageError
+# Logging
+import logging
+logger = logging.getLogger(__name__)
 
 # 5 KB
 MAX_FILE_SIZE = 5 * 1024
@@ -69,10 +72,11 @@ class UserOut(Schema):
 class MessageIn(Schema):
     content: str
 
-    @field_validator('*')
-    def alphanumeric(cls, v):
-        assert v.isalnum(), 'must be alphanumeric'
+    @field_validator('content')
+    def alphanumeric_space(cls, v):
+        assert ALNUMERIC_SPACE.match(v), 'must be alphanumeric or space'
         return v
+
 
 class MessageOut(Schema):
     id: int
@@ -117,7 +121,10 @@ class ReturnError(Schema):
 @ensure_csrf_cookie
 @csrf_exempt
 def get_csrf_token(request):
-    return HttpResponse('{"csrfToken": "' + f'{get_token(request)}' + '"}', content_type='application/json')
+    try:
+        return HttpResponse('{"csrfToken": "' + f'{get_token(request)}' + '"}', content_type='application/json')
+    except Exception as e:
+        logger.error(f"CSRF token generation failed: {e}")
 
 @api.post("/login", response={200: ReturnMessage, 401: ReturnError}, auth=None)
 def login_user(request, payload: UserIn):
@@ -127,7 +134,7 @@ def login_user(request, payload: UserIn):
             login(request, user)
             return 200, {"message": "Login successful"}
     except Exception as e:
-        print(e)
+        logger.exception(f"Login failed: {e}")
         return 401, {"details": "Invalid credentials"}
     return 401, {"details": "Invalid credentials"}
 
@@ -136,7 +143,7 @@ def logout_user(request):
     try:
         logout(request)
     except Exception as e:
-        print(e)
+        logger.exception(f"Logout failed: {e}")
         return 400, {"details": "Logout failed"}
     return 200, {"message": "Logout successful"}
 
@@ -145,8 +152,8 @@ def session_status(request):
     try:
         if request.user.is_authenticated:
             return 200, {"username": f"{request.user.username}", "id": str(request.user.id)}
-        
     except Exception as e:
+        logger.exception(f"Session status check failed: {e}")
         return 401, {"details": "User is not logged in"}
     return 401, {"details": "User is not logged in"}
 
@@ -163,6 +170,7 @@ def create_user(request, payload: UserIn):
     except ValidationError as e:
         return 400, {"details": "User creation failed"}
     except Exception as e:
+        logger.exception(f"User creation failed: {e}")
         return 400, {"details": "User creation failed"}
     return 200, {"message": "User created successfully"}
 
@@ -251,7 +259,7 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
     except ValidationError:
         return 400, {"details": "Image upload failed"}
     except Exception as e:
-        print(e)
+        logger.exception(f"Image upload failed: {e}")
         return 400, {"details": "Image upload failed"}
 
 
@@ -266,7 +274,7 @@ def create_message(request, payload: MessageIn):
     except ValidationError:
         return 400, {"details": "Message creation failed"}
     except Exception as e:
-        print(e)
+        logger.exception(f"Message creation failed: {e}")
         return 400, {"details": "Message creation failed"}
     return 200, {"message": "Message created successfully"}
 
@@ -285,7 +293,7 @@ def list_message(request):
                 "profile_picture": profile_picture_obj.profile_picture if profile_picture_obj.profile_picture else "",
             })
     except Exception as e:
-        print(e)
+        logger.exception(f"Message retrieval failed: {e}")
         return 400, {"details": "Message retrieval failed"}
     return 200, message_list
 
@@ -300,7 +308,7 @@ def delete_message(request, message_uuid: str):
     except Message.DoesNotExist:
         return 400, {"details": "Message deletion failed"}
     except Exception as e:
-        print(e)
+        logger.exception(f"Message deletion failed: {e}")
         return 400, {"details": "Message deletion failed"}
     return 200, {"message": "Message deleted successfully"}
 
@@ -329,6 +337,6 @@ def ai_slop(request):
             return 200, {"message": cleaned_message} 
         return 400 , {"details": "Slop failed"}
     except Exception as e:
-        print(e)
+        logger.exception(f"Slop failed: {e}")
         return 400, {"details": "Slop failed"}
 

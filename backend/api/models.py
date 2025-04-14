@@ -33,7 +33,6 @@ class Message(models.Model):
         validators.validate_slug,
     ])
     content = models.CharField(max_length=255, validators = [
-        validators.validate_unicode_slug, 
         validators.ProhibitNullCharactersValidator,
         validators.MaxLengthValidator(255),
         validators.MinLengthValidator(1),
