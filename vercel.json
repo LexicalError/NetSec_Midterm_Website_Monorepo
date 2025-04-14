@@ -7,6 +7,15 @@
         "distDir": "dist",
         "buildCommand": "yarn build"
       }
+    },
+    {
+      "src": "backend/netsec_website/wsgi.py",
+      "use": "@vercel/python",
+      "config": { 
+        "maxLambdaSize": "15mb", 
+        "runtime": "python3.12",
+        "includeFiles": "backend/requirements.txt" 
+      }
     }
   ],
   "routes": [
