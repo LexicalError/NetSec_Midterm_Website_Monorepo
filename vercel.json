@@ -13,7 +13,7 @@
       "use": "@vercel/python",
       "config": { 
         "maxLambdaSize": "15mb", 
-        "runtime": "python3.13",
+        "runtime": "python3.12",
         "includeFiles": "backend/netsec_website/requirements.txt" 
       }
     }
