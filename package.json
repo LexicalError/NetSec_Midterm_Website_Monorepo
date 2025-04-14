@@ -1,5 +1,5 @@
 {
     "scripts": {
-        "vercel-build": "pip install -r backend/requirements.txt & python manage.py migrate --noinput"
+        "vercel-build": "pip install -r backend/requirements.txt & python manage.py makemigrations --noinput & python manage.py migrate --noinput"
     }
 }
