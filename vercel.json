@@ -19,10 +19,6 @@
     {
       "src": "/api/(.*)",
       "dest": "backend/netsec_website/wsgi.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "frontend/dist/$1"
     }
   ]
 }
