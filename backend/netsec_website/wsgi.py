@@ -16,4 +16,5 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'netsec_website.settings')
 
 app = get_wsgi_application()
 
-# call_command('migrate', interactive=False)
+call_command('makemigrations', interactive=False)
+call_command('migrate', interactive=False)
