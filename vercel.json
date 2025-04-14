@@ -5,8 +5,7 @@
       "use": "@vercel/static-build",
       "config": {
         "distDir": "frontend/dist",
-        "buildCommand": "yarn build",
-        "outputDirectory": "frontend/dist"
+        "buildCommand": "yarn build"
       }
     },
     {
