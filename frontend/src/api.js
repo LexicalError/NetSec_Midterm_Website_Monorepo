@@ -1,4 +1,5 @@
-export const API_URL = "http://fakelocal.api:8000/api";
+// export const API_URL = "http://fakelocal.api:8000/api";
+export const API_URL = "/api";
 
 export async function getCSRFToken() {
     try {
