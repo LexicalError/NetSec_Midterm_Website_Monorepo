@@ -33,7 +33,8 @@ SECRET_KEY_FALLBACKS = [
 ALLOWED_HOSTS = [
         # 'fakelocal.api', # REMOVE
         '127.0.0.1', 
-        '.vercel.app'
+        '.vercel.app',
+        'localhost',
     ]
 
 
