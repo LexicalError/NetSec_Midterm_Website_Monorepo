@@ -1,5 +1,6 @@
 
 from pathlib import Path
+import dj_database_url
 # import environ
 import os
 import sys
@@ -30,7 +31,7 @@ SECRET_KEY_FALLBACKS = [
 # DEBUG = True
 
 ALLOWED_HOSTS = [
-        # 'fakelocal.api', # REMOVE
+        'fakelocal.api', # REMOVE
         '127.0.0.1', 
         '.vercel.app'
     ]
@@ -46,13 +47,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     # 'django.contrib.staticfiles',
     'api',
-    # "corsheaders", # REMOVE
+    "corsheaders", # REMOVE
 ] 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware', # REMOVE
+    'corsheaders.middleware.CorsMiddleware', # REMOVE
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -84,12 +85,19 @@ WSGI_APPLICATION = 'netsec_website.wsgi.app'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get("NEON_CONNECTION_STRING")
+    )
 }
+
 
 
 # Password validation
@@ -108,6 +116,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+]
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
 
@@ -175,24 +191,24 @@ LOGGING = {
 
 
 # CORS
-# CORS_ALLOWED_ORIGINS = [
-#     "http://fakelocal.api:5173",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://fakelocal.api:5173",
+]
 
-# CSRF_TRUSTED_ORIGINS = [
-#     "http://fakelocal.api:5173",
-# ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://fakelocal.api:5173",
+]
 
-# CORS_ALLOW_HEADERS = [
-#     "content-type",
-#     "x-csrftoken",
-#     "authorization",
-#     "accept",
-#     "origin",
-#     "user-agent",
-#     "x-requested-with",
-# ]
-# CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "x-csrftoken",
+    "authorization",
+    "accept",
+    "origin",
+    "user-agent",
+    "x-requested-with",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Vercel blob
 VERCEL_BLOB_BASE_URL = os.environ['VERCEL_BLOB_BASE_URL']
@@ -202,12 +218,12 @@ BLOB_READ_WRITE_TOKEN = os.environ['BLOB_READ_WRITE_TOKEN']
 AUTH_USER_MODEL = 'api.CustomUser'
 
 # SSL
-SECURE_SSL_REDIRECT = True
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 3600
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# SECURE_SSL_REDIRECT = True
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+# SECURE_HSTS_SECONDS = 3600
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
 
 #GROQ
 GROQ_API_URL = os.environ['GROQ_API_URL']

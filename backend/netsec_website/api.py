@@ -161,7 +161,8 @@ def session_status(request):
 @api.post("/user", response={200:ReturnMessage, 400: ReturnError}, auth=None)
 def create_user(request, payload: UserIn):
     try:
-        user = CustomUser(**payload.dict())
+        user = CustomUser(username=payload.username)
+        user.set_password(payload.password)
         user.save()
     except IntegrityError as e:
         if 'UNIQUE constraint failed' in str(e):
