@@ -4,7 +4,7 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "dist",
+        "distDir": "frontend/dist",
         "buildCommand": "yarn build",
         "outputDirectory": "frontend/dist"
       }
@@ -19,6 +19,10 @@
     {
       "src": "/api/(.*)",
       "dest": "backend/netsec_website/wsgi.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/dist/$1"
     }
   ]
 }
