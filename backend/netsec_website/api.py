@@ -11,7 +11,7 @@ from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
-from .settings import GROQ_API_KEY, GROQ_API_URL
+from .settings import GROQ_API_KEY
 # pydantic
 from pydantic import BaseModel, ValidationError, field_validator
 #api
@@ -27,7 +27,7 @@ from PIL import Image, UnidentifiedImageError
 # Python magic
 import magic
 #Groq
-import groq from Groq
+from groq import Groq
 # Logging
 import logging
 logger = logging.getLogger(__name__)
@@ -336,7 +336,7 @@ def delete_message(request, message_uuid: str):
 def ai_slop(request):
     try:
         client = Groq(
-            api_key=os.environ.get("GROQ_API_KEY"),
+            api_key=GROQ_API_KEY,
         )
         chat_completion = client.chat.completions.create(
             messages=[{
