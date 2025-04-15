@@ -341,9 +341,9 @@ def ai_slop(request):
         chat_completion = client.chat.completions.create(
             messages=[{
                 "role": "user",
-                "content": "Explain the importance of fast language models",
+                "content": "Generate a 2 word Italian brain rot name like: 'bombardino crocodilo' or 'cappuccino assassino', respond with only 2 words.",
             }],
-            model="llama-3.3-70b-versatile",
+            model="llama3-8b-8192",
         )
 
         message = chat_completion.choices[0].message.content
