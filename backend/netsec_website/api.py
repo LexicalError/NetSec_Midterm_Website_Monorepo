@@ -353,6 +353,7 @@ def ai_slop(request):
             message = content["choices"][0]["message"]["content"]
             cleaned_message = re.sub(r'[^a-zA-Z0-9 ]', '', message)
             return 200, {"message": cleaned_message} 
+        logger.error(f"Slop failed: {response.status_code} - {response.text}")
         return 400 , {"details": "Slop failed"}
     except Exception as e:
         logger.exception(f"Slop failed: {e}")
