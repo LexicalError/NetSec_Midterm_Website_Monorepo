@@ -26,6 +26,8 @@ import requests
 from PIL import Image, UnidentifiedImageError
 # Python magic
 import magic
+#Groq
+import groq from Groq
 # Logging
 import logging
 logger = logging.getLogger(__name__)
@@ -333,30 +335,20 @@ def delete_message(request, message_uuid: str):
 @api.get("/ai_slop", response={200: ReturnMessage, 400: ReturnError})
 def ai_slop(request):
     try:
-        url = GROQ_API_URL
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-        }
+        client = Groq(
+            api_key=os.environ.get("GROQ_API_KEY"),
+        )
+        chat_completion = client.chat.completions.create(
+            messages=[{
+                "role": "user",
+                "content": "Explain the importance of fast language models",
+            }],
+            model="llama-3.3-70b-versatile",
+        )
 
-        data = {
-            "model": "llama3-8b-8192",
-            "messages": [
-                {"role": "user", "content": "Generate a 2 word Italian brain rot name like: 'bombardino crocodilo' or 'cappuccino assassino', respond with only 2 words."},
-            ],
-        }
-
-        logger.info(f"Requesting AI Slop: {GROQ_API_URL}")
-        logger.info(f"GROQ_API_KEY is set: {bool(GROQ_API_KEY)}")
-        response = requests.post(url, json=data, headers=headers)
-
-        if response.status_code == 200:
-            content = response.json()
-            message = content["choices"][0]["message"]["content"]
-            cleaned_message = re.sub(r'[^a-zA-Z0-9 ]', '', message)
-            return 200, {"message": cleaned_message} 
-        logger.error(f"Slop failed: {response.status_code} - {response.text}\n{response.json()}")
-        return 400 , {"details": "Slop failed"}
+        message = chat_completion.choices[0].message.content
+        cleaned_message = re.sub(r'[^a-zA-Z0-9 ]', '', message)
+        return 200, {"message": cleaned_message} 
     except Exception as e:
         logger.exception(f"Slop failed: {e}")
         return 400, {"details": "Slop failed"}
