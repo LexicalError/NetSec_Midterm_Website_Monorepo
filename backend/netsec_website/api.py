@@ -24,6 +24,8 @@ from io import BytesIO
 import requests
 # Pillow
 from PIL import Image, UnidentifiedImageError
+# Python magic
+import magic
 # Logging
 import logging
 logger = logging.getLogger(__name__)
@@ -213,37 +215,52 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
             return 400, {"details": "Image upload failed"}
         name_parts = file.name.rsplit(".", 1)
         if len(name_parts) != 2:
-            return 400, {"details": "Invalid file name"}
+            return 400, {"details": "Invalid file"}
         basename, ext = name_parts
         if ext not in ['jpg', 'png']:
-            return 400, {"details": "Invalid file name"}
+            return 400, {"details": "Invalid file"}
         if len(basename) > 255:
-            return 400, {"details": "Invalid file name"}
+            return 400, {"details": "Invalid file"}
         if re.match(r'^[a-zA-Z0-9-_]+$', basename) is None:
-            return 400, {"details": "Invalid file name"}
+            return 400, {"details": "Invalid file"}
         
         # Check MIME type
         content_type = file.content_type
         if content_type not in ['image/jpeg', 'image/png']:
-            return 400, {"details": "Unsupported file type"}
-        
+            return 400, {"details": "Invalid file"}
+
         file_data = file.read()
         if not file_data:
             return 400, {"details": "File is empty"}
         if len(file_data) > MAX_FILE_SIZE:
             return 400, {"details": "File too large"}
         
+        # Check MIME with python-magic
+        mime = magic.Magic(mime=True)
+        mimetype = mime.from_buffer(file_data)
+        if mimetype not in ['image/jpeg', 'image/png']:
+            return 400, {"details": "Invalid file"}
         # Validate content
         try:
-            img = Image.open(BytesIO(file_data))
-            img.verify()  # validate file integrity
+            # Strip metadata
+            raw_img = Image.open(BytesIO(file_data))
+            image_format = raw_img.format
+            raw_img.verify()  # validate file integrity
+            if image_format not in ['JPEG', 'PNG']:
+                return 400, {"details": "Invalid file"}
+            
+            raw_img = Image.open(BytesIO(file_data))
+            data = list(raw_img.getdata())
+            img = Image.new(raw_img.mode, raw_img.size)
+            img.putdata(data)
+            
         except UnidentifiedImageError:
             return 400, {"details": "Invalid file"}
         except Exception:
+            logger.exception("Image metadata strip failed: {e}")
             return 400, {"details": "Invalid file"}
-        
+
         # Sanitize image
-        img = Image.open(BytesIO(file_data))
         img = img.convert("RGB")  
         img = img.resize((64, 64))
 
