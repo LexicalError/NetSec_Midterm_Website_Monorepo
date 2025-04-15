@@ -347,7 +347,7 @@ def ai_slop(request):
         }
 
         logger.info(f"Requesting AI Slop: {GROQ_API_URL}")
-
+        logger.info(f"GROQ_API_KEY is set: {bool(GROQ_API_KEY)}")
         response = requests.post(url, json=data, headers=headers)
 
         if response.status_code == 200:
