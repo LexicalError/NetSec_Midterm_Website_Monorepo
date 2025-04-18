@@ -13,7 +13,7 @@ from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from .settings import GROQ_API_KEY
 # pydantic
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import ValidationError, field_validator
 #api
 from api.models import Message, Profile_Picture, CustomUser
 # python
@@ -21,7 +21,7 @@ import re
 import vercel_blob
 from typing import List
 from io import BytesIO
-import requests
+import uuid
 # Pillow
 from PIL import Image, UnidentifiedImageError
 # Python magic
@@ -271,7 +271,8 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
         safe_buffer.seek(0)
 
         user = CustomUser.objects.get(id=request.user.id)
-        uploaded_file = vercel_blob.put(f'', safe_buffer.read(), {})
+        file_uuid = str(uuid.uuid4())
+        uploaded_file = vercel_blob.put(f'{file_uuid}', safe_buffer.read(), {})
         profile_picture, created = Profile_Picture.objects.get_or_create(user=user)
         profile_picture.profile_picture = uploaded_file['downloadUrl']
         profile_picture.save()
