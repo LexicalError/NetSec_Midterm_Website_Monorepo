@@ -194,7 +194,7 @@ LOGGING = {
 
 # CORS
 # CORS_ALLOWED_ORIGINS = [
-#     "http://fakelocal.api:5173",
+#     "http://localhost:3000",
 # ]
 
 # CSRF_TRUSTED_ORIGINS = [

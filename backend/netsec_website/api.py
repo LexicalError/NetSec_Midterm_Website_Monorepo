@@ -271,7 +271,7 @@ def upload_profile_picture(request, file: UploadedFile = File(...)):
         safe_buffer.seek(0)
 
         user = CustomUser.objects.get(id=request.user.id)
-        uploaded_file = vercel_blob.put(f'{request.user.id}', safe_buffer.read(), {})
+        uploaded_file = vercel_blob.put(f'', safe_buffer.read(), {})
         profile_picture, created = Profile_Picture.objects.get_or_create(user=user)
         profile_picture.profile_picture = uploaded_file['downloadUrl']
         profile_picture.save()
